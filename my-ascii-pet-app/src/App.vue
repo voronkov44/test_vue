@@ -49,15 +49,69 @@ const description = ref('')
 const savedAscii = ref('')
 const savedDescription = ref('')
 
-function savePet() {
-  savedAscii.value = asciiArt.value
-  savedDescription.value = description.value
-  asciiArt.value = ''
-  description.value = ''
+// Функция для сохранения данных
+const savePet = async () => {
+  const petData = {
+    ascii: asciiArt.value,
+    description: description.value
+  }
+
+  try {
+    const response = await fetch('http://localhost:8080/v1/pet', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(petData)
+    })
+
+    if (response.ok) {
+      console.log('Pet saved successfully')
+      const data = await response.text()
+      savedAscii.value = asciiArt.value
+      savedDescription.value = description.value
+
+      asciiArt.value = ''
+      description.value = ''
+    } else {
+      console.error('Failed to save pet')
+    }
+  } catch (error) {
+    console.error('Error:', error)
+  }
 }
 
-function copyText(text) {
-  if (!text) return
-  navigator.clipboard.writeText(text)
+// Функция для копирования текста
+const copyText = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    console.log('Text copied to clipboard')
+  })
 }
+
+// Функция для загрузки pet
+const loadPet = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/v1/pet')
+
+    if (response.ok) {
+      const data = await response.json()
+      console.log('Loaded pet:', data)
+
+      savedAscii.value = data.ascii
+      savedDescription.value = data.description
+
+    } else if (response.status === 204) {
+      console.log('No pet data found')
+    } else {
+      console.error('Failed to load pet')
+    }
+  } catch (error) {
+    console.error('Error loading pet:', error)
+  }
+}
+
+// загружаем pet при загрузке страницы
+window.addEventListener('load', loadPet)
+
 </script>
+
