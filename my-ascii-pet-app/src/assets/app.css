@@ -76,6 +76,8 @@ body {
 
 .description-display {
     font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    min-height: 85px;
 }
 
 .copy-icon {

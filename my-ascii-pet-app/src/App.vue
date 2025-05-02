@@ -5,13 +5,13 @@
     </div>
 
     <div class="display-card">
-      <el-icon class="delete-icon" @click="deletePet">
+      <el-icon v-if="savedAscii || savedDescription" class="delete-icon" @click="deletePet">
         <Delete />
       </el-icon>
       <div class="label">ASCII - картинка</div>
       <div class="ascii-display">
         <pre>{{ savedAscii || '.........／＞　 フ...........\n　　　　　| 　_　 _|\n　 　　　／ミ _x 彡\n　　 　 /　　　 　 |\n　　　 /　 ヽ　　 ﾉ\n　／￣|　　 |　|　|\n　| (￣ヽ＿_ヽ_)_)\n　＼二つ' }}</pre>
-        <el-icon class="copy-icon" @click="copyText(savedAscii)">
+        <el-icon v-if="savedAscii" class="copy-icon" @click="copyText(savedAscii)">
           <CopyDocument />
         </el-icon>
       </div>
@@ -19,7 +19,7 @@
       <div class="label">Описание питомца</div>
       <div class="description-display">
         <span>{{ savedDescription || 'Это грустный котик - Степик\nПочему он грустный?\nПотому что тут нету картинки и описания...' }}</span>
-        <el-icon class="copy-icon" @click="copyText(savedDescription)">
+        <el-icon v-if="savedDescription" class="copy-icon" @click="copyText(savedDescription)">
           <CopyDocument />
         </el-icon>
       </div>
@@ -44,8 +44,8 @@
       <div style="margin: 10px 0;">
         <el-switch
             v-model="strictValidation"
-            active-text="Строгая валидация"
-            inactive-text="Гибкая валидация"
+            active-text="Строгая валидация(0-127 символов)"
+            inactive-text="Гибкая валидация(для арт ASCII)"
         />
       </div>
 
@@ -67,19 +67,11 @@ const strictValidation = ref(true) // параметр для переключе
 
 // Функция для сохранения данных (метод PUT)
 const savePet = async () => {
-  const ascii = asciiArt.value.trim()
-  const desc = description.value.trim()
+  const ascii = asciiArt.value
+  const desc = description.value
 
   // Валидация ASCII (строгая)
-  const isValidAscii = (str) => {
-    for (let i = 0; i < str.length; i++) {
-      const code = str.charCodeAt(i)
-      if (code !== 10 && (code < 32 || code > 126)) {
-        return false
-      }
-    }
-    return true
-  }
+  const isValidAscii = (input) => /^[\x20-\x7E\n]*$/.test(input)
 
   // Валидация ASCII (гибкая для арт ASCII)
   const isPrintable = (input) =>
@@ -138,6 +130,7 @@ const savePet = async () => {
 
     if (response.ok) {
       console.log('Pet saved successfully')
+      ElMessage.success('Питомец сохранён!')
       await response.text()
 
       savedAscii.value = ascii
@@ -160,6 +153,9 @@ const savePet = async () => {
 const copyText = (text) => {
   navigator.clipboard.writeText(text).then(() => {
     console.log('Text copied to clipboard')
+    ElMessage.success(`Текст скопирован`)
+  }).catch(() => {
+    ElMessage.error('Не удалось скопировать')
   })
 }
 
@@ -187,6 +183,7 @@ const loadPet = async () => {
 // загружаем pet при загрузке страницы
 window.addEventListener('load', loadPet)
 
+// Удаление питомца
 const deletePet = async () => {
   try {
     const response = await fetch('http://localhost:8080/v1/pet', {
@@ -195,13 +192,16 @@ const deletePet = async () => {
 
     if (response.status === 204) {
       console.log('Pet deleted successfully')
+      ElMessage.success('Питомец удалён!')
       savedAscii.value = ''
       savedDescription.value = ''
     } else {
       console.error('Failed to delete pet')
+      ElMessage.error('Не удалось удалить питомца')
     }
   } catch (error) {
     console.error('Error deleting pet:', error)
+    ElMessage.error('Произошла ошибка при удалении')
   }
 }
 </script>
